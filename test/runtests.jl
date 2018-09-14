@@ -56,20 +56,14 @@ end
         end
     end
 
-    acquired = false
     @test asynctimedwait(1.0; kill=true) do
         acquire(rsem)
-        acquired = true
     end
-    @test acquired
     @test _current_count(rsem) == 1
 
-    acquired = false
     @test asynctimedwait(1.0; kill=true) do
         acquire(rsem)
-        acquired = true
     end
-    @test acquired
     @test _current_count(rsem) == 2
 
     acquired = false
@@ -118,20 +112,14 @@ end
             end
         end
 
-        acquired = false
         @test asynctimedwait(1.0; kill=true) do
             acquire(rsem)
-            acquired = true
         end
-        @test acquired
         @test _current_count(rsem) == 1
 
-        acquired = false
         @test asynctimedwait(1.0; kill=true) do
             acquire(rsem)
-            acquired = true
         end
-        @test acquired
         @test _current_count(rsem) == 2
 
         acquired = false
