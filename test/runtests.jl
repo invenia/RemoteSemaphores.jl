@@ -4,6 +4,7 @@ using Compat.Test
 
 using Compat.Dates
 using Compat.Distributed
+using Compat: @info
 
 struct TimeoutException
     duration
@@ -42,7 +43,7 @@ end
     @test _current_count(rsem) == 0
 
     try
-        info("Expect \"ERROR (unhandled task failure)\" on Julia 0.6 only")
+        @info("Expect \"ERROR (unhandled task failure)\" on Julia 0.6 only")
         asynctimedwait(1.0; kill=true) do
             release(rsem)
         end
@@ -98,7 +99,7 @@ end
         @test _current_count(rsem) == 0
 
         try
-            info("Expect \"ERROR (unhandled task failure)\" on Julia 0.6 only")
+            @info("Expect \"ERROR (unhandled task failure)\" on Julia 0.6 only")
             asynctimedwait(1.0; kill=true) do
                 release(rsem)
             end
