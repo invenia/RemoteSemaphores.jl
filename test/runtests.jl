@@ -2,8 +2,8 @@ using RemoteSemaphores
 using RemoteSemaphores: _current_count
 using Compat.Test
 
-using Compat: @schedule
 using Compat.Dates
+using Compat.Distributed
 
 struct TimeoutException
     duration
