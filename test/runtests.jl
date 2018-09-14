@@ -1,6 +1,6 @@
 using RemoteSemaphores
 using RemoteSemaphores: _current_count
-using Base.Test
+using Compat.Test
 
 using Compat: @schedule
 using Compat.Dates
