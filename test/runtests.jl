@@ -132,8 +132,10 @@ end
 
         rsem = RemoteSemaphore(3, worker1_pid)
         @test _current_count(rsem) == 0
+        @test (@fetchfrom worker1_pid _current_count(rsem)) == 0
+        @test (@fetchfrom worker2_pid _current_count(rsem)) == 0
 
-        @test asynctimedwait(1.0; kill=true) do
+        @test asynctimedwait(10.0; kill=true) do
             acquire(rsem)
         end
         @test _current_count(rsem) == 1
@@ -155,14 +157,14 @@ end
         @test (@fetchfrom worker2_pid _current_count(rsem)) == 3
 
         acquired1 = false
-        @test asynctimedwait(1.0) do
+        @test asynctimedwait(10.0) do
             acquire(rsem)
             acquired1 = true
         end == false
 
         acquired2 = Future()
         @test @fetchfrom worker1_pid begin
-            asynctimedwait(1.0) do
+            asynctimedwait(10.0) do
                 acquire(rsem)
                 put!(acquired2, true)
             end
@@ -170,7 +172,7 @@ end
 
         acquired3 = Future()
         @test @fetchfrom worker2_pid begin
-            asynctimedwait(1.0) do
+            asynctimedwait(10.0) do
                 acquire(rsem)
                 put!(acquired3, true)
             end
@@ -178,19 +180,33 @@ end
 
         conditions_hit() = acquired1 + isready(acquired2) + isready(acquired3)
 
+        sleep(10)
+
         @test conditions_hit() == 0
-        @test asynctimedwait(1.0; kill=true) do
+        @test asynctimedwait(10.0; kill=true) do
             release(rsem)
         end
+
+        sleep(2)
+
         @test conditions_hit() == 1
-        @test asynctimedwait(1.0; kill=true) do
+        @test asynctimedwait(10.0; kill=true) do
             release(rsem)
         end
+
+        sleep(2)
+
         @test conditions_hit() == 2
-        @test asynctimedwait(1.0; kill=true) do
+        @test asynctimedwait(10.0; kill=true) do
             release(rsem)
         end
+
+        sleep(2)
+
         @test conditions_hit() == 3
+        @test acquired1
+        @test isready(acquired2)
+        @test isready(acquired3)
     end
 end
 
