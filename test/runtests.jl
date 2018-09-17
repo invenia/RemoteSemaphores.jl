@@ -6,33 +6,7 @@ using Compat.Dates
 using Compat.Distributed
 using Compat: @info
 
-struct TimeoutException
-    duration
-end
-
-function Base.showerror(io::IO, te::TimeoutException)
-    print(io, "TimeoutException: Operation did not finish in ", te.duration)
-
-    if !isa(te.duration, Period)
-        print(io, " seconds")
-    end
-end
-
-function asynctimedwait(fn, secs; kill=false)
-    t = @async fn()
-    timedwait(() -> istaskdone(t), secs)
-
-    if istaskdone(t)
-        fetch(t)
-        return true
-    else
-        if kill
-            Base.throwto(t, TimeoutException(secs))
-        end
-
-        return false
-    end
-end
+include("utils.jl")
 
 @testset "RemoteSemaphores.jl" begin
 
@@ -94,6 +68,7 @@ end
     @testset "Simple remote" begin
         worker_pid = addprocs(1)[1]
         @everywhere using RemoteSemaphores
+        @everywhere include("utils.jl")
 
         rsem = RemoteSemaphore(2, worker_pid)
         @test _current_count(rsem) == 0
@@ -144,6 +119,76 @@ end
         end
 
         @test _current_count(rsem) == 2
+    end
+
+    @testset "Multiple processes" begin
+        addprocs(3 - nprocs())
+        worker1_pid, worker2_pid = workers()
+        @everywhere using RemoteSemaphores
+        @everywhere using RemoteSemaphores: _current_count
+        @everywhere include("utils.jl")
+
+        rsem = RemoteSemaphore(3, worker1_pid)
+        @test _current_count(rsem) == 0
+
+        @test asynctimedwait(1.0; kill=true) do
+            acquire(rsem)
+        end
+        @test _current_count(rsem) == 1
+        @test (@fetchfrom worker1_pid _current_count(rsem)) == 1
+        @test (@fetchfrom worker2_pid _current_count(rsem)) == 1
+
+        @test @fetchfrom worker2_pid asynctimedwait(1.0; kill=true) do
+            acquire(rsem)
+        end
+        @test _current_count(rsem) == 2
+        @test (@fetchfrom worker1_pid _current_count(rsem)) == 2
+        @test (@fetchfrom worker2_pid _current_count(rsem)) == 2
+
+        @test @fetchfrom worker1_pid asynctimedwait(1.0; kill=true) do
+            acquire(rsem)
+        end
+        @test _current_count(rsem) == 3
+        @test (@fetchfrom worker1_pid _current_count(rsem)) == 3
+        @test (@fetchfrom worker2_pid _current_count(rsem)) == 3
+
+        acquired1 = false
+        @test asynctimedwait(1.0) do
+            acquire(rsem)
+            acquired1 = true
+        end == false
+
+        acquired2 = Future()
+        @test @fetchfrom worker1_pid begin
+            asynctimedwait(1.0) do
+                acquire(rsem)
+                put!(acquired2, true)
+            end
+        end == false
+
+        acquired3 = Future()
+        @test @fetchfrom worker2_pid begin
+            asynctimedwait(1.0) do
+                acquire(rsem)
+                put!(acquired3, true)
+            end
+        end == false
+
+        conditions_hit() = acquired1 + isready(acquired2) + isready(acquired3)
+
+        @test conditions_hit() == 0
+        @test asynctimedwait(1.0; kill=true) do
+            release(rsem)
+        end
+        @test conditions_hit() == 1
+        @test asynctimedwait(1.0; kill=true) do
+            release(rsem)
+        end
+        @test conditions_hit() == 2
+        @test asynctimedwait(1.0; kill=true) do
+            release(rsem)
+        end
+        @test conditions_hit() == 3
     end
 end
 
