@@ -15,6 +15,7 @@ include("utils.jl")
 
     rsem = RemoteSemaphore(2)
     @test _current_count(rsem) == 0
+    @test string(rsem) == "$(typeof(rsem))(2, pid=$(myid()))"
 
     try
         @info("Expect \"ERROR (unhandled task failure)\" on Julia 0.6 only")
@@ -72,6 +73,7 @@ end
 
         rsem = RemoteSemaphore(2, worker_pid)
         @test _current_count(rsem) == 0
+        @test string(rsem) == "$(typeof(rsem))(2, pid=$worker_pid)"
 
         try
             @info("Expect \"ERROR (unhandled task failure)\" on Julia 0.6 only")
