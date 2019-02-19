@@ -1,10 +1,9 @@
 using RemoteSemaphores
 using RemoteSemaphores: _current_count
-using Compat.Test
+using Test
 
-using Compat.Dates
-using Compat.Distributed
-using Compat: @info
+using Dates
+using Distributed
 
 include("utils.jl")
 
@@ -18,16 +17,23 @@ include("utils.jl")
     @test string(rsem) == "$(typeof(rsem))(2, pid=$(myid()))"
 
     try
-        @info("Expect \"ERROR (unhandled task failure)\" on Julia 0.6 only")
         asynctimedwait(1.0; kill=true) do
             release(rsem)
         end
         @test "Expected error but no error thrown" == nothing
     catch err
         @test err isa RemoteException
-        @test err.captured.ex isa AssertionError
 
-        if !isa(err, RemoteException) || !isa(err.captured.ex, AssertionError)
+        if VERSION >= v"1.2.0-DEV.28"
+            expected = ErrorException
+            @test err.captured.ex isa expected
+            @test occursin("release count must match acquire count", err.captured.ex.msg)
+        else
+            expected = AssertionError
+            @test err.captured.ex isa expected
+        end
+
+        if !isa(err, RemoteException) || !isa(err.captured.ex, expected)
             rethrow(err)
         end
     end
@@ -76,16 +82,23 @@ end
         @test string(rsem) == "$(typeof(rsem))(2, pid=$worker_pid)"
 
         try
-            @info("Expect \"ERROR (unhandled task failure)\" on Julia 0.6 only")
             asynctimedwait(1.0; kill=true) do
                 release(rsem)
             end
             @test "Expected error but no error thrown" == nothing
         catch err
             @test err isa RemoteException
-            @test err.captured.ex isa AssertionError
 
-            if !isa(err, RemoteException) || !isa(err.captured.ex, AssertionError)
+            if VERSION >= v"1.2.0-DEV.28"
+                expected = ErrorException
+                @test err.captured.ex isa expected
+                @test occursin("release count must match acquire count", err.captured.ex.msg)
+            else
+                expected = AssertionError
+                @test err.captured.ex isa expected
+            end
+
+            if !isa(err, RemoteException) || !isa(err.captured.ex, expected)
                 rethrow(err)
             end
         end

@@ -1,10 +1,9 @@
-__precompile__()
 module RemoteSemaphores
 
 export RemoteSemaphore, acquire, release
 
 using Base: Semaphore, acquire, release
-using Compat.Distributed
+using Distributed
 
 """
     RemoteSemaphore(n::Int, pid=myid())
