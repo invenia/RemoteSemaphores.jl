@@ -1,7 +1,6 @@
 # RemoteSemaphores
 
-[![Build Status](https://travis-ci.com/invenia/RemoteSemaphores.jl.svg?branch=master)](https://travis-ci.com/invenia/RemoteSemaphores.jl)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/invenia/RemoteSemaphores.jl?svg=true)](https://ci.appveyor.com/project/invenia/RemoteSemaphores-jl)
+[![CI](https://github.com/Invenia/RemoteSemaphores.jl/workflows/CI/badge.svg)](https://github.com/Invenia/RemoteSemaphores.jl/actions?query=workflow%3ACI)
 [![CodeCov](https://codecov.io/gh/invenia/RemoteSemaphores.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/invenia/RemoteSemaphores.jl)
 
 ## Documentation
